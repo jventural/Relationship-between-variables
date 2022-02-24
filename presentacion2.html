@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Buenas prácticas en análisis de datos en investigación</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Dr. José Ventura-León" />
+    <script src="libs/header-attrs-2.11/header-attrs.js"></script>
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Buenas prácticas en análisis de datos en investigación
+## Lima, Perú
+### Dr. José Ventura-León
+### Marzo 8, 2022
+
+---
+
+
+&lt;img src="Imagen1.png" width="800" height="250" style="display: block; margin: auto;" /&gt;
+
+## **- Un procedimiento clásico, es realizar sumas a los items**
+## *Sin embargo este proceso no considera varios supuestos*
+---
+
+# Supuestos básicos cuando se trabaja con instrumentos autoinformados
+
+&lt;img src="Imagen1.png" width="800" height="250" style="display: block; margin: auto;" /&gt;
+### 1. Las variables observadas tiene naturaleza tipo Likert.
+### 2. Asume igualdad de varianza entre los ítems  (tau-equivalencia)
+
+---
+# Supuestos básicos cuando se trabaja con instrumentos autoinformados
+
+&lt;img src="Imagen1.png" width="800" height="250" style="display: block; margin: auto;" /&gt;
+
+### 3. Se obtiene una variable no observable mediante la sumatoria de ítems. Es decir es un procedimiento aritmético
+### 4.No incluye el error de medida de cada indicador [X = V+e]
+
+---
+# Pero que sucede en la realidad…
+&lt;img src="Imagen2.png" width="500" height="250" style="display: block; margin: auto;" /&gt;
+
+### 1. Las variables observadas son casi siempre de naturaleza ordinal.
+### 2. Desigualdad de varianza (modelos cogenéricos)
+
+---
+
+# Pero que sucede en la realidad…
+
+&lt;img src="Imagen2.png" width="500" height="250" style="display: block; margin: auto;" /&gt;
+### 3. Las variables no observadas deben realizarse mediante procedimientos algebraicos
+### 4. Toda medida tiene un error de medición.
+
+---
+# Importante conocer los elementos de SEM
+&lt;img src="Imagen3.png" width="500" height="250" style="display: block; margin: auto;" /&gt;&lt;img src="Imagen4.png" width="500" height="250" style="display: block; margin: auto;" /&gt;
+---
+&lt;img src="Imagen5.png" width="800" height="500" style="display: block; margin: auto;" /&gt;
+
+---
+&lt;img src="Imagen6.png" width="800" height="500" style="display: block; margin: auto;" /&gt;
+
+---
+# Data y organización
+
+
+```r
+#Cargando las libreias a utilizarse
+pacman::p_load(qgraph, tidyverse, correlation)
+
+#cargando la data, que es de la libreria qgraph
+data(big5)
+big5_new &lt;- big5 %&gt;% 
+  as_tibble() %&gt;% 
+  select(starts_with("N"),starts_with("E")) %&gt;% 
+  select(N1:N46,E2:E42) %&gt;% 
+  rowwise() %&gt;% 
+  mutate(
+    Neuroticismo = sum(c_across(c(N1:N46))),
+    Extraversion = sum(c_across(c(E2:E42)))
+  )
+```
+---
+# Correlaciones clásicas (Pearson)
+
+```r
+##Cálculo de correlación de Pearson
+correlation_pearson &lt;- big5_new %&gt;% 
+  select(Neuroticismo:Extraversion) %&gt;% 
+  correlation(method = "pearson",
+              p_adjust = "none") %&gt;% as_tibble() %&gt;% dplyr::select(Parameter1:CI_high) %&gt;% 
+   mutate(across(where(is.numeric), round, 2))
+knitr::kable(correlation_pearson, format = "html", booktabs = TRUE, valign = 't') 
+```
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; Parameter1 &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Parameter2 &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; r &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; CI &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; CI_low &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; CI_high &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Neuroticismo &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Extraversion &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; -0.26 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.95 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; -0.34 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; -0.18 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+---
+# Correlaciones clásicas (Spearman)
+
+```r
+#Cálculo de correlación de Spearman
+correlation_spearman &lt;- big5_new %&gt;% 
+  select(Neuroticismo:Extraversion) %&gt;%
+correlation(method = "spearman",
+            p_adjust = "none") %&gt;% as_tibble() %&gt;% dplyr::select(Parameter1:CI_high) %&gt;% 
+   mutate(across(where(is.numeric), round, 2))
+knitr::kable(correlation_spearman, format = "html", booktabs = TRUE, valign = 't') 
+```
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; Parameter1 &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Parameter2 &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; rho &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; CI &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; CI_low &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; CI_high &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Neuroticismo &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Extraversion &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; -0.25 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.95 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; -0.33 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; -0.16 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+---
+# Modelo de ecuaciones estructurales
+
+```r
+library(lavaan)
+# 1. Especificación del modelo
+model  &lt;- "Neuro =~ N1+N6+N11+N16+N21+N31+N36+N41+N46 
+           Extra =~ E2+E7+E12+E17+E22+E27+E32+E37+E42"
+
+# 2. Estimación del modelo
+fit = sem(model,
+          data = big5, 
+          estimator = "WLSMV", 
+          mimic = "Mplus", 
+          ordered = TRUE)
+```
+---
+# Output de correlación latente
+
+```r
+SEM &lt;- lavaan::inspect(fit, what = "std")$psi %&gt;% as_tibble() %&gt;%
+  mutate(across(where(is.numeric), round, 2))
+
+knitr::kable(SEM)
+```
+
+
+
+| Neuro| Extra|
+|-----:|-----:|
+|  1.00| -0.81|
+| -0.81|  1.00|
+
+---
+# bondades de ajuste
+
+```r
+bondad &lt;- 
+  lavaan::fitMeasures(fit, c("chisq.scaled", "df.scaled", "srmr","wrmr", "cfi.scaled", "tli.scaled","rmsea.scaled"))  %&gt;% round(2) %&gt;% as.data.frame() %&gt;% rename("value" = ".")
+knitr::kable(bondad, format = "html", caption = "Bondades de ajuste")
+```
+
+&lt;table&gt;
+&lt;caption&gt;Bondades de ajuste&lt;/caption&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt;   &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; value &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; chisq.scaled &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 745.40 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; df.scaled &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 134.00 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; srmr &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.09 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; wrmr &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.73 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; cfi.scaled &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.76 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; tli.scaled &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.72 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; rmsea.scaled &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.10 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+---
+# Reespecificación del modelo
+
+```r
+mod &lt;- modificationindices(fit,sort. = T, minimum.value = 20)%&gt;% 
+  select(lhs:epc) %&gt;% mutate(across(where(is.numeric), round, 2)) %&gt;% 
+filter(op == "~~")
+knitr::kable(mod, format = "html", caption = "Indices de modificación")
+```
+
+&lt;table&gt;
+&lt;caption&gt;Indices de modificación&lt;/caption&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; lhs &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; op &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; rhs &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; mi &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; epc &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; N21 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ~~ &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; N36 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 44.13 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.27 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; E7 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ~~ &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; E32 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 29.84 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.24 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; N36 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ~~ &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; E22 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 25.02 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.21 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; N21 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ~~ &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; E22 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 23.99 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.19 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; E32 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ~~ &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; E37 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 22.49 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.20 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; E12 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ~~ &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; E42 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 22.41 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.20 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; E27 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ~~ &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; E32 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 22.22 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.21 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; N36 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ~~ &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; E17 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 20.13 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.19 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+---
+# Plot SEM
+&lt;img src="presentacion2_files/figure-html/unnamed-chunk-33-1.png" width="70%" style="display: block; margin: auto;" /&gt;
+---
+# Modelo reespecificado
+
+```r
+# 1. Especificar un modelo
+model1  &lt;- "Neuro =~ N1+N6+N11+N16+N31+N41 
+           Extra =~ E7+E12+E17+E32+E37+E42
+           E7 ~~ E32 
+           E7 ~~ E37"
+# 2. Estimamos un modelo
+fit1 = lavaan::sem(model1,
+          data = big5, 
+          estimator = "WLSMV", 
+          mimic = "Mplus", 
+          ordered = TRUE)
+```
+---
+# correlación latente
+
+```r
+SEM1 &lt;- inspect(fit1, what = "std")$psi %&gt;% as_tibble() %&gt;%
+  mutate(across(where(is.numeric), round, 2))
+
+knitr::kable(SEM1, format = "html")
+```
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:right;"&gt; Neuro &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Extra &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 1.00 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; -0.89 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; -0.89 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.00 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+---
+# bondades de ajuste - Modelo reespecificado
+
+```r
+bondad1=lavaan::fitMeasures(fit, c("chisq.scaled", "df.scaled", "srmr","wrmr", "cfi.scaled", "tli.scaled","rmsea.scaled"))  %&gt;% round(2) %&gt;% 
+  as.data.frame() %&gt;% rename("value" = ".")
+knitr::kable(bondad1, format = "html", caption = "Bondades de ajuste")
+```
+
+&lt;table&gt;
+&lt;caption&gt;Bondades de ajuste&lt;/caption&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt;   &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; value &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; chisq.scaled &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 745.40 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; df.scaled &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 134.00 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; srmr &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.09 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; wrmr &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.73 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; cfi.scaled &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.76 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; tli.scaled &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.72 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; rmsea.scaled &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.10 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+---
+# indices de modificación
+
+
+```r
+mod1 &lt;- modificationindices(fit1,sort. = T, minimum.value = 20)%&gt;% 
+  select(lhs:epc) %&gt;% mutate(across(where(is.numeric), round, 2)) %&gt;% 
+filter(op == "~~")
+knitr::kable(mod1, format = "html", caption = "Indices de modificación 1")
+```
+
+&lt;table&gt;
+&lt;caption&gt;Indices de modificación 1&lt;/caption&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; lhs &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; op &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; rhs &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; mi &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; epc &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; E32 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ~~ &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; E37 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 42.23 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.27 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+---
+# Plot SEM Respecificado
+&lt;img src="presentacion2_files/figure-html/unnamed-chunk-38-1.png" width="70%" style="display: block; margin: auto;" /&gt;
+---
+# Limitaciones de SEM
+
+## 1. Se requieren escalas cortas.
+## 2.De preferencia unidimensionales.
+## 3. Tamaños muestrales (n &gt; 300)
+
+Fuentes de referencia:
+
+[Sample Size Requirements of the Robust Weighted Least Squares Estimator](https://psycnet.apa.org/record/2013-30585-001) 
+
+[A Comparison of Diagonal Weighted Least Squares Robust Estimation Techniques for Ordinal Data](https://www.tandfonline.com/doi/abs/10.1080/10705511.2014.915373) 
+
+
+```r
+xaringan::moon_reader()
+```
+
+```
+## $knitr
+## $knitr$opts_knit
+## NULL
+## 
+## $knitr$opts_chunk
+## NULL
+## 
+## $knitr$knit_hooks
+## NULL
+## 
+## $knitr$opts_hooks
+## NULL
+## 
+## $knitr$opts_template
+## NULL
+## 
+## 
+## $pandoc
+## $pandoc$to
+## [1] "html"
+## 
+## $pandoc$from
+## [1] "markdown+autolink_bare_uris+tex_math_single_backslash"
+## 
+## $pandoc$args
+## [1] "-V"                                                                                                              
+## [2] "mathjax-url=https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML"                               
+## [3] "-V"                                                                                                              
+## [4] "title-slide-class=center, middle, inverse, title-slide"                                                          
+## [5] "--standalone"                                                                                                    
+## [6] "--section-divs"                                                                                                  
+## [7] "--template"                                                                                                      
+## [8] "C:\\Users\\PC\\Documents\\R\\win-library\\4.1\\xaringan\\rmarkdown\\templates\\xaringan\\resources\\default.html"
+## [9] "--no-highlight"                                                                                                  
+## 
+## $pandoc$keep_tex
+## [1] FALSE
+## 
+## $pandoc$latex_engine
+## [1] "pdflatex"
+## 
+## $pandoc$ext
+## NULL
+## 
+## $pandoc$lua_filters
+## [1] "C:\\Users\\PC\\Documents\\R\\win-library\\4.1\\rmarkdown\\rmarkdown\\lua\\pagebreak.lua"
+## [2] "C:\\Users\\PC\\Documents\\R\\win-library\\4.1\\rmarkdown\\rmarkdown\\lua\\latex-div.lua"
+## 
+## 
+## $keep_md
+## [1] FALSE
+## 
+## $clean_supporting
+## [1] FALSE
+## 
+## $df_print
+## [1] "default"
+## 
+## $pre_knit
+## function (...) 
+## {
+##     op(base(...), overlay(...))
+## }
+## &lt;bytecode: 0x00000162e808ffa8&gt;
+## &lt;environment: 0x00000162eca09670&gt;
+## 
+## $post_knit
+## function (...) 
+## {
+##     op(base(...), overlay(...))
+## }
+## &lt;bytecode: 0x00000162e808ffa8&gt;
+## &lt;environment: 0x00000162eca09d70&gt;
+## 
+## $pre_processor
+## function (...) 
+## {
+##     op(base(...), overlay(...))
+## }
+## &lt;bytecode: 0x00000162e808ffa8&gt;
+## &lt;environment: 0x00000162ee1debc0&gt;
+## 
+## $intermediates_generator
+## function (original_input, intermediates_dir) 
+## {
+##     copy_render_intermediates(original_input, intermediates_dir, 
+##         !self_contained)
+## }
+## &lt;bytecode: 0x00000162e80bc530&gt;
+## &lt;environment: 0x00000162ebf4ba78&gt;
+## 
+## $post_processor
+## function (metadata, input_file, output_file, clean, verbose) 
+## {
+##     output_str &lt;- read_utf8(output_file)
+##     s1 &lt;- "&lt;span class=\"sc\"&gt;|&lt;/span&gt;&lt;span class=\"er\"&gt;&amp;gt;&lt;/span&gt;"
+##     s2 &lt;- "&lt;span class=\"ot\"&gt;=&lt;/span&gt;&lt;span class=\"er\"&gt;&amp;gt;&lt;/span&gt;"
+##     if ((length(preserved_chunks) == 0 &amp;&amp; !isTRUE(copy_resources) &amp;&amp; 
+##         self_contained) &amp;&amp; !length(c(grep(s1, output_str, fixed = TRUE), 
+##         grep(s2, output_str, fixed = TRUE)))) 
+##         return(output_file)
+##     if (length(preserved_chunks) &gt; 0) {
+##         for (i in names(preserved_chunks)) {
+##             output_str &lt;- gsub(paste0("&lt;p&gt;", i, "&lt;/p&gt;"), i, output_str, 
+##                 fixed = TRUE, useBytes = TRUE)
+##             output_str &lt;- gsub(paste0(" id=\"[^\"]*?", i, "[^\"]*?\" "), 
+##                 " ", output_str, useBytes = TRUE)
+##         }
+##         output_str &lt;- restorePreserveChunks(output_str, preserved_chunks)
+##     }
+##     if (copy_resources) {
+##         output_str &lt;- copy_html_resources(one_string(output_str), 
+##             lib_dir, output_dir)
+##     }
+##     else if (!self_contained) {
+##         image_relative &lt;- function(img_src, src) {
+##             in_file &lt;- utils::URLdecode(src)
+##             if (grepl("^[.][.]", in_file)) 
+##                 return(img_src)
+##             if (length(in_file) &amp;&amp; file.exists(in_file)) {
+##                 img_src &lt;- sub(src, utils::URLencode(normalized_relative_to(output_dir, 
+##                   in_file)), img_src, fixed = TRUE)
+##             }
+##             img_src
+##         }
+##         output_str &lt;- process_images(output_str, image_relative)
+##     }
+##     output_str &lt;- gsub(s1, "&lt;span class=\"sc\"&gt;|&amp;gt;&lt;/span&gt;", 
+##         output_str, fixed = TRUE)
+##     output_str &lt;- gsub(s2, "&lt;span class=\"ot\"&gt;=&amp;gt;&lt;/span&gt;", 
+##         output_str, fixed = TRUE)
+##     write_utf8(output_str, output_file)
+##     output_file
+## }
+## &lt;bytecode: 0x00000162e80bc9c8&gt;
+## &lt;environment: 0x00000162ebf4ba78&gt;
+## 
+## $on_exit
+## function () 
+## {
+##     if (is.function(base)) 
+##         base()
+##     if (is.function(overlay)) 
+##         overlay()
+## }
+## &lt;bytecode: 0x00000162e8087b80&gt;
+## &lt;environment: 0x00000162ee1dc3e0&gt;
+## 
+## attr(,"class")
+## [1] "rmarkdown_output_format"
+```
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
